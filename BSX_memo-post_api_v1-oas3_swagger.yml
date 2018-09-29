@@ -1,0 +1,371 @@
+openapi: 3.0.0
+servers:
+  - url: 'https://esbnp.bankofthewes.com:5443/memopost.api/json/v1'
+info:
+  description: |
+
+    This is the Bank of the West Memo Post API.  It can be used to soft post
+    intraday monetary transactions against the Bank's systems of record.  It
+    supports internal transfers between customer accounts and stand-alone debit
+    and credit transactions.
+
+
+    The current version of the service only supports postings to deposit
+    accounts.
+
+    ## Endpoints
+    - Dev: https://esbnp.bankofthewest.com:5443/dev/memopost.api/json/v1
+    - QA: https://esbnp.bankofthewest.com:6443/qa/memopost.api/json/v1
+    - UAT: https://esbnp.bankofthewest.com:7443/uat/memopost.api/json/v1
+    - Stage: https://medstg.bankofthewest.com:8443/stg/memopost.api/json/v1
+    - Prod: https://med.bankofthewest.com:8443/prod/memopost.api/json/v1
+  version: "v1-oas3"
+  title: Memo Post API
+  contact:
+    email: RISEApplicationSupport@bankofthewest.com
+paths:
+  /accounts/memoposts:
+    post:
+      tags:
+        - MemoPosts
+      description: |
+        Memo posts a debit OR credit against a demand deposit account
+      operationId: addMemoPost
+      parameters:
+        - name: X-Message-Id
+          in: header
+          description: Unique message ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoPostResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: >-
+            Internal server error.  This will be used when the system of record
+            could not process the request and as the default status code for
+            unknown exceptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '501':
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Bad Gateway.  The API gateway received a fault from the ESB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '504':
+          description: >-
+            Gateway timeout.  The gateway did not receive a timely response from
+            the ESB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoPost'
+        description: Memo Post Request Object
+        required: true
+  /accounts/memoposts/transfers:
+    post:
+      tags:
+        - MemoPosts
+      description: |
+        Posts a debit to the `fromAcct` and a credit to the `toAcct`
+      operationId: addTransferMemoPost
+      parameters:
+        - name: X-Message-Id
+          in: header
+          description: Unique message ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoPostResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: >-
+            Internal server error.  This will be used when the system of record
+            could not process the request and as the default status code for
+            unknown exceptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '501':
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Bad Gateway.  The API gateway received a fault from the ESB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '504':
+          description: >-
+            Gateway timeout.  The gateway did not receive a timely response from
+            the ESB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferMemoPost'
+        description: Transfer Memo Post Request Object
+        required: true
+components:
+  schemas:
+    MemoPost:
+      required:
+        - acctKeys
+        - amt
+        - tranCd
+        - tranType
+      properties:
+        acctKeys:
+          $ref: '#/components/schemas/AcctKeys'
+        tranType:
+          type: string
+          enum:
+            - Debit
+            - Credit
+        amt:
+          type: number
+          description: Transaction amount
+          multipleOf: 0.01
+        ccy:
+          type: string
+          description: Currency
+          maxLength: 3
+          default: USD
+        tranCd:
+          type: string
+          description: Transaction code
+        tranDescription:
+          type: string
+          description: Transaction description
+        tranDt:
+          type: string
+          format: date
+          description: Transfer due date
+        memo1:
+          type: string
+          description: Memo line 1
+        memo2:
+          type: string
+          description: Memo line 2
+        refData:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefData'
+      example:
+        acctKeys:
+          acctId: 2019200
+          acctType: DDA
+        tranType: Debit
+        amt: 999.99
+        ccy: USD
+        tranDt: '2000-01-23'
+        tranCd: 5070
+        tranDescription: ACH DEBIT
+        memo1: memo1
+        memo2: memo2
+        refData:
+          - refType: PmtOrderNum
+            refId: 12345
+      type: object
+    TransferMemoPost:
+      description: Transfers funds from the  `fromAcctKeys` to the `toAcctKeys`
+      properties:
+        fromAcctKeys:
+          $ref: '#/components/schemas/AcctKeys'
+        toAcctKeys:
+          $ref: '#/components/schemas/AcctKeys'
+        amt:
+          type: number
+          description: Transaction amount
+          multipleOf: 0.01
+        ccy:
+          type: string
+          description: Currency
+          maxLength: 3
+          default: USD
+        tranCd:
+          type: string
+          description: Transaction code
+        tranDescription:
+          type: string
+          description: Transaction description
+        tranDt:
+          type: string
+          format: date
+          description: Transfer due date
+        memo1:
+          type: string
+          description: Memo line 1
+        memo2:
+          type: string
+          description: Memo line 2
+        refData:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefData'
+      required:
+        - fromAcctKeys
+        - toAcctKeys
+        - amt
+        - tranCd
+      example:
+        fromAcctKeys:
+          acctId: 2019200
+          acctType: DDA
+        toAcctKeys:
+          acctId: 302920
+          acctType: DDA
+        tranType: Debit
+        amt: 999.99
+        ccy: USD
+        tranDt: '2000-01-23'
+        tranCd: 5070
+        tranDescription: TRANSFER
+        memo1: memo1
+        memo2: memo2
+        refData:
+          - refType: PmtOrderNum
+            refId: 12345
+      type: object
+    AcctKeys:
+      required:
+        - acctId
+        - acctType
+      properties:
+        acctId:
+          type: string
+          description: Account number
+          maxLength: 20
+        acctType:
+          type: string
+          description: |
+            Account type.  Valid values:
+
+            | Type | Description |
+            | -----| ----------- |
+            | DDA | Demand deposit account |
+            | SAV | Traditional savings |
+            | IRA | IRA |
+            | TCD | Term certificate of deposit |
+            | MMA | Money market account |
+          maxLength: 3
+      type: object
+    RefData:
+      properties:
+        refType:
+          type: string
+          description: 'Reference type. Ex: PmtOrderNum'
+        refId:
+          type: string
+          description: Reference ID
+      example:
+        refType: refType
+        refId: refId
+      type: object
+    MemoPostResponse:
+      properties:
+        tranId:
+          type: string
+          description: Transaction ID
+        refData:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefData'
+      example:
+        tranId: tranId
+        refData:
+          - refType: refType
+            refId: refId
+          - refType: refType
+            refId: refId
+      type: object
+    Error:
+      properties:
+        code:
+          type: string
+          description: HTTP error code
+        subcode:
+          type: string
+          description: >-
+            Service-specific error code.  Generally used with code `500` to
+            provide a more granular error code from the backend system
+        message:
+          type: string
+          description: Short error message
+        details:
+          type: string
+          description: Detailed error message
+      required:
+        - code
+        - message
+      type: object
